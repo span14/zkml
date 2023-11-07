@@ -568,8 +568,8 @@ impl<F: PrimeField + Ord + FromUniformBytes<64>> Circuit<F> for ModelCircuit<F> 
 
   fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
     let mut gadget_config = crate::model::GADGET_CONFIG.lock().unwrap().clone();
-    // TODO: Allocate less columns
-    let witness_columns = (0..gadget_config.num_cols)
+
+    let witness_columns = (0..gadget_config.num_rand_cols)
       .map(|_| meta.advice_column())
       .collect::<Vec<_>>();
     gadget_config.challenges = vec![
@@ -580,20 +580,15 @@ impl<F: PrimeField + Ord + FromUniformBytes<64>> Circuit<F> for ModelCircuit<F> 
     let columns = (0..gadget_config.num_cols)
       .map(|_| meta.advice_column_in(SecondPhase))
       .collect::<Vec<_>>();
-    // let rand_vector = meta.advice_column_in(SecondPhase);
 
-    // for i in 0..gadget_config.num_rand_cols {
-    //   meta.enable_equality(witness_columns[i]);
-    //   meta.enable_equality(columns[i]);
-    // }
+    for i in 0..gadget_config.num_rand_cols {
+      meta.enable_equality(witness_columns[i]);
+    }
 
     for i in 0..gadget_config.num_cols {
-      meta.enable_equality(witness_columns[i]);
       meta.enable_equality(columns[i]);
     }
     
-    // meta.enable_equality(rand_vector);
-
     gadget_config.witness_columns = witness_columns;
     gadget_config.columns = columns;
 
