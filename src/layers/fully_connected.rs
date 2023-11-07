@@ -13,6 +13,8 @@ use crate::{
     dot_prod::DotProductChip,
     gadget::{Gadget, GadgetConfig, GadgetType},
     nonlinear::relu::ReluChip,
+    rand_dot_prod_one::RandDotProductOneChip,
+    rand_dot_prod_two::RandDotProductTwoChip,
     var_div::VarDivRoundChip,
   },
   layers::layer::ActivationType,
@@ -114,7 +116,7 @@ impl<F: PrimeField> Layer<F> for FullyConnectedChip<F> {
     mut layouter: impl Layouter<F>,
     tensors: &Vec<AssignedTensor<F>>,
     constants: &HashMap<i64, CellRc<F>>,
-    rand_vector: &HashMap<i64, (CellRc<F>, F)>,
+    // rand_vector: &HashMap<i64, (CellRc<F>, F)>,
     gadget_config: Rc<GadgetConfig>,
     layer_config: &LayerConfig,
   ) -> Result<Vec<AssignedTensor<F>>, Error> {
@@ -200,18 +202,9 @@ impl<F: PrimeField> Layer<F> for FullyConnectedChip<F> {
       }
     )?;
 
-
-    // Generate random vectors
-    let r1 = Self::random_vector(rand_vector, mm_result.shape()[0]).unwrap();
-    let r2 = Self::random_vector(rand_vector, mm_result.shape()[1]).unwrap();
-
     let dot_prod_chip = DotProductChip::<F>::construct(gadget_config.clone());
-    let r1_ref = r1.iter().map(
-      |x| (x.0.as_ref(), x.1)
-    ).collect::<Vec<_>>();
-    let r2_ref = r2.iter().map(
-      |x| (x.0.as_ref(), x.1)
-    ).collect::<Vec<_>>();
+    let rand_dot_prod_one_chip = RandDotProductOneChip::<F>::construct(gadget_config.clone());
+    let rand_dot_prod_two_chip = RandDotProductTwoChip::<F>::construct(gadget_config.clone());
 
     // Compute r1 * result
     let mut r1_res = vec![];
@@ -221,10 +214,10 @@ impl<F: PrimeField> Layer<F> for FullyConnectedChip<F> {
     for i in 0..mm_result.shape()[1] {
       let tmp = mm_result.index_axis(Axis(1), i);
       let mm_ci = tmp.iter().map(|x| (&x.0, x.1)).collect::<Vec<_>>();
-      let r1_res_i = dot_prod_chip
+      let r1_res_i = rand_dot_prod_one_chip
         .forward(
           layouter.namespace(|| format!("r1_res_{}", i)),
-          &vec![mm_ci, r1_ref.clone()],
+          &vec![mm_ci],
           &vec![(zero, F::ZERO)],
         )
         .unwrap();
@@ -232,10 +225,10 @@ impl<F: PrimeField> Layer<F> for FullyConnectedChip<F> {
     }
     // Compute r1 * result * r2
     let r1_res_ref = r1_res.iter().map(|x| (&x.0, x.1)).collect::<Vec<_>>();
-    let r1_res_r2 = dot_prod_chip
+    let r1_res_r2 = rand_dot_prod_two_chip
       .forward(
         layouter.namespace(|| "r1_res_r2"),
-        &vec![r1_res_ref, r2_ref.clone()],
+        &vec![r1_res_ref],
         &vec![(zero, F::ZERO)],
       )
       .unwrap();
@@ -248,10 +241,10 @@ impl<F: PrimeField> Layer<F> for FullyConnectedChip<F> {
     for i in 0..input.shape()[1] {
       let tmp = input.index_axis(Axis(1), i);
       let input_ci = tmp.iter().map(|x| (x.0.as_ref(), x.1)).collect::<Vec<_>>();
-      let r1_input_i = dot_prod_chip
+      let r1_input_i = rand_dot_prod_one_chip
         .forward(
           layouter.namespace(|| format!("r1_input_{}", i)),
-          &vec![input_ci, r1_ref.clone()],
+          &vec![input_ci],
           &vec![(zero, F::ZERO)],
         )
         .unwrap();
@@ -262,10 +255,10 @@ impl<F: PrimeField> Layer<F> for FullyConnectedChip<F> {
     for i in 0..weight.shape()[0] {
       let tmp = weight.index_axis(Axis(0), i);
       let weight_ci = tmp.iter().map(|x| (x.0.as_ref(), x.1)).collect::<Vec<_>>();
-      let weight_r2_i = dot_prod_chip
+      let weight_r2_i = rand_dot_prod_two_chip
         .forward(
           layouter.namespace(|| format!("weight_r2_{}", i)),
-          &vec![weight_ci, r2_ref.clone()],
+          &vec![weight_ci],
           &vec![(zero, F::ZERO)],
         )
         .unwrap();
@@ -371,6 +364,8 @@ impl<F: PrimeField> GadgetConsumer for FullyConnectedChip<F> {
     let mut outp = vec![
       GadgetType::Adder,
       GadgetType::AddPairs,
+      GadgetType::RandDotProductOne,
+      GadgetType::RandDotProductTwo,
       GadgetType::DotProduct,
       GadgetType::VarDivRound,
       GadgetType::InputLookup,

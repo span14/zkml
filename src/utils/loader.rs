@@ -25,6 +25,7 @@ pub struct ModelMsgpack {
   pub global_sf: i64,
   pub k: i64,
   pub num_cols: i64,
+  pub num_rand_cols: i64,
   pub inp_idxes: Vec<i64>,
   pub out_idxes: Vec<i64>,
   pub tensors: Vec<TensorMsgpack>,

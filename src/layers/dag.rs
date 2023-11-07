@@ -68,7 +68,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
     mut layouter: impl Layouter<F>,
     tensors: &Vec<AssignedTensor<F>>,
     constants: &HashMap<i64, CellRc<F>>,
-    rand_vector: &HashMap<i64, (CellRc<F>, F)>,
+    // rand_vector: &HashMap<i64, (CellRc<F>, F)>,
     gadget_config: Rc<GadgetConfig>,
     _layer_config: &LayerConfig,
   ) -> Result<(HashMap<usize, AssignedTensor<F>>, Vec<AssignedTensor<F>>), Error> {
@@ -99,7 +99,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag add"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -110,7 +110,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag avg pool 2d"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -123,7 +123,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag max pool 2d"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -134,7 +134,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag batch mat mul"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -145,7 +145,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag batch mat mul"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -159,7 +159,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag conv 2d"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -170,7 +170,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag div"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -181,7 +181,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag div"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -195,7 +195,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag fully connected"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -206,7 +206,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag softmax"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -217,7 +217,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag mean"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -228,7 +228,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag pad"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -239,7 +239,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag permute"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -250,7 +250,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag squared diff"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -261,7 +261,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag rsqrt"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -272,7 +272,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag sqrt"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -283,7 +283,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag logistic"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -294,7 +294,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag logistic"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -305,7 +305,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag tanh"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -316,7 +316,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag mul"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -327,7 +327,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag sub"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -338,7 +338,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag noop"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -349,7 +349,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag transpose"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -360,7 +360,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag reshape"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -371,7 +371,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag resize nn"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -382,7 +382,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag rotate"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -393,7 +393,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag concatenation"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -404,7 +404,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag pack"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -415,7 +415,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag split"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -426,7 +426,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag update"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -437,7 +437,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag slice"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -448,7 +448,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag mask neg inf"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?
@@ -459,7 +459,7 @@ impl<F: PrimeField + Ord> DAGLayerChip<F> {
             layouter.namespace(|| "dag square"),
             &vec_inps,
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             &layer_config,
           )?

@@ -5,6 +5,8 @@ pub mod bias_div_round_relu6;
 pub mod dot_prod;
 pub mod gadget;
 pub mod input_lookup;
+pub mod rand_dot_prod_one;
+pub mod rand_dot_prod_two;
 pub mod max;
 pub mod mul_pairs;
 pub mod sqrt_big;

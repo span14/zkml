@@ -25,13 +25,14 @@ def get_inputs(op: tflite.Operator):
 
 class Converter:
   def __init__(
-      self, model_path, scale_factor, k, num_cols, num_randoms, use_selectors, commit,
+      self, model_path, scale_factor, k, num_cols, num_rand_cols, num_randoms, use_selectors, commit,
       expose_output
     ):
     self.model_path = model_path
     self.scale_factor = scale_factor
     self.k = k
     self.num_cols = num_cols
+    self.num_rand_cols = num_rand_cols
     self.num_randoms = num_randoms
     self.use_selectors = use_selectors
     self.commit = commit
@@ -480,6 +481,7 @@ class Converter:
       'global_sf': self.scale_factor,
       'k': self.k,
       'num_cols': self.num_cols,
+      'num_rand_cols': self.num_rand_cols,
       'num_random': self.num_randoms,
       'inp_idxes': [inp['index'] for inp in input_details],
       # 'out_idxes': [out['index'] for out in output_details],
@@ -514,6 +516,7 @@ def main():
   parser.add_argument('--k', type=int, default=19)
   parser.add_argument('--eta', type=float, default=0.001)
   parser.add_argument('--num_cols', type=int, default=6)
+  parser.add_argument('--num_rand_cols', type=int, default=3)
   parser.add_argument('--use_selectors', action=argparse.BooleanOptionalAction, required=False, default=True)
   parser.add_argument('--commit', action=argparse.BooleanOptionalAction, required=False, default=False)
   parser.add_argument('--expose_output', action=argparse.BooleanOptionalAction, required=False, default=True)
@@ -527,6 +530,7 @@ def main():
     args.scale_factor,
     args.k,
     args.num_cols,
+    args.num_rand_cols,
     args.num_randoms,
     args.use_selectors,
     args.commit,

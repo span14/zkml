@@ -21,7 +21,7 @@ impl<F: PrimeField> Layer<F> for BatchMatMulChip {
     mut layouter: impl Layouter<F>,
     tensors: &Vec<AssignedTensor<F>>,
     constants: &HashMap<i64, CellRc<F>>,
-    rand_vector: &HashMap<i64, (CellRc<F>, F)>,
+    // rand_vector: &HashMap<i64, (CellRc<F>, F)>,
     gadget_config: Rc<GadgetConfig>,
     layer_config: &LayerConfig,
   ) -> Result<Vec<AssignedTensor<F>>, Error> {
@@ -73,7 +73,7 @@ impl<F: PrimeField> Layer<F> for BatchMatMulChip {
         layouter.namespace(|| ""),
         &vec![inp1_slice, inp2_slice],
         constants,
-        rand_vector,
+        // rand_vector,
         gadget_config.clone(),
         &tmp_config,
       )?;
@@ -90,6 +90,8 @@ impl GadgetConsumer for BatchMatMulChip {
     vec![
       GadgetType::Adder,
       GadgetType::DotProduct,
+      GadgetType::RandDotProductOne,
+      GadgetType::RandDotProductTwo,
       GadgetType::VarDivRound,
       GadgetType::InputLookup,
     ]

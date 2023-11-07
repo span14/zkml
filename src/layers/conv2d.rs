@@ -22,7 +22,7 @@ use crate::{
   },
 };
 
-use super::layer::{ActivationType, AssignedTensor, GadgetConsumer, Layer, LayerConfig, CellRc};
+use super::layer::{ActivationType, AssignedTensor, GadgetConsumer, Layer, LayerConfig};
 
 #[derive(Default, Clone, Copy, Eq, PartialEq)]
 pub enum PaddingEnum {
@@ -291,7 +291,7 @@ impl<F: PrimeField> Layer<F> for Conv2DChip<F> {
     mut layouter: impl Layouter<F>,
     tensors: &Vec<AssignedTensor<F>>,
     constants: &HashMap<i64, Rc<AssignedCell<F, F>>>,
-    rand_vector: &HashMap<i64, (CellRc<F>, F)>,
+    // rand_vector: &HashMap<i64, (CellRc<F>, F)>,
     gadget_config: Rc<GadgetConfig>,
     layer_config: &LayerConfig,
   ) -> Result<Vec<AssignedTensor<F>>, Error> {
@@ -343,7 +343,7 @@ impl<F: PrimeField> Layer<F> for Conv2DChip<F> {
             layouter.namespace(|| ""),
             &vec![weights_array, inp_array],
             constants,
-            rand_vector,
+            // rand_vector,
             gadget_config.clone(),
             layer_config,
           )
@@ -438,12 +438,23 @@ impl<F: PrimeField> Layer<F> for Conv2DChip<F> {
 impl<F: PrimeField> GadgetConsumer for Conv2DChip<F> {
   fn used_gadgets(&self, layer_params: Vec<i64>) -> Vec<crate::gadgets::gadget::GadgetType> {
     let conv_config = &Self::param_vec_to_config(layer_params.clone());
-    let mut outp = vec![
-      GadgetType::Adder,
-      GadgetType::DotProduct,
-      GadgetType::InputLookup,
-      GadgetType::BiasDivRoundRelu6,
-    ];
+
+    let mut outp = match conv_config.conv_type {
+      ConvLayerEnum::Conv2D => vec![
+        GadgetType::Adder,
+        GadgetType::DotProduct,
+        GadgetType::RandDotProductOne,
+        GadgetType::RandDotProductTwo,
+        GadgetType::InputLookup,
+        GadgetType::BiasDivRoundRelu6,
+      ],
+      ConvLayerEnum::DepthwiseConv2D => vec![
+        GadgetType::Adder,
+        GadgetType::DotProduct,
+        GadgetType::InputLookup,
+        GadgetType::BiasDivRoundRelu6,
+      ]
+    };
 
     if conv_config.activation == ActivationType::Relu {
       outp.push(GadgetType::Relu);

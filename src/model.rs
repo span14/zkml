@@ -7,7 +7,7 @@ use std::{
 use halo2_proofs::{
   circuit::{Layouter, SimpleFloorPlanner, Value},
   halo2curves::ff::{FromUniformBytes, PrimeField},
-  plonk::{Advice, Circuit, Column, ConstraintSystem, Error, FirstPhase, Instance, Challenge, SecondPhase},
+  plonk::{Advice, Circuit, Column, ConstraintSystem, Error, FirstPhase, Instance, SecondPhase},
 };
 use lazy_static::lazy_static;
 use ndarray::{Array, IxDyn};
@@ -26,6 +26,8 @@ use crate::{
     dot_prod::DotProductChip,
     gadget::{Gadget, GadgetConfig, GadgetType},
     input_lookup::InputLookupChip,
+    rand_dot_prod_one::RandDotProductOneChip,
+    rand_dot_prod_two::RandDotProductTwoChip,
     max::MaxChip,
     mul_pairs::MulPairsChip,
     nonlinear::{exp::ExpGadgetChip, pow::PowGadgetChip, relu::ReluChip, tanh::TanhGadgetChip},
@@ -95,8 +97,7 @@ pub struct ModelConfig<F: PrimeField + Ord + FromUniformBytes<64>> {
   pub gadget_config: Rc<GadgetConfig>,
   pub public_col: Column<Instance>,
   pub hasher: Option<PoseidonCommitChip<F, WIDTH, RATE, L>>,
-  pub challenge: Challenge,
-  pub rand_vector: Column<Advice>,
+  // pub rand_vector: Column<Advice>,
   pub _marker: PhantomData<F>,
 }
 
@@ -288,39 +289,6 @@ impl<F: PrimeField + Ord + FromUniformBytes<64>> ModelCircuit<F> {
     Ok(constants)
   }
 
-  fn fill_random_vectors(
-    &self, 
-    mut layouter: impl Layouter<F>,
-    challenge: Challenge,
-    rand_vector: Column<Advice>,
-  ) -> Result<HashMap<i64, (CellRc<F>, F)>, Error> {
-    let c_base = {
-      let c = layouter.get_challenge(challenge);
-      // Default value here is provided to pass mock prover check and it will be fiat shamir
-      // challenge in proof generation
-      c.assign().map_or(F::from(0x123456789abcdef), |x| x)
-    };
-    let mut c = c_base;
-    let rand_vec = layouter.assign_region(
-      || "random vector",
-      |mut region| {
-        let mut rand_vec = HashMap::new();
-        for i in 0..self.num_random {
-          let rand = region.assign_advice(
-            || format!("rand_vec_{}", i),
-            rand_vector,
-            i.try_into().unwrap(),
-            || Value::known(c),
-          )?;
-          rand_vec.insert(i as i64, (Rc::new(rand), c));
-          c = c * c_base;
-        }
-        Ok(rand_vec)
-      }
-    )?;
-    Ok(rand_vec)
-  }
-
   pub fn generate_from_file(config_file: &str, inp_file: &str) -> ModelCircuit<F> {
     let config = load_model_msgpack(config_file, inp_file);
     Self::generate_from_msgpack(config, true)
@@ -490,6 +458,7 @@ impl<F: PrimeField + Ord + FromUniformBytes<64>> ModelCircuit<F> {
       k: config.k as usize,
       num_rows: (1 << config.k) - 10 + 1,
       num_cols: config.num_cols as usize,
+      num_rand_cols: config.num_rand_cols as usize,
       used_gadgets: used_gadgets.clone(),
       commit_before: config.commit_before.clone().unwrap_or(vec![]),
       commit_after: config.commit_after.clone().unwrap_or(vec![]),
@@ -603,18 +572,27 @@ impl<F: PrimeField + Ord + FromUniformBytes<64>> Circuit<F> for ModelCircuit<F> 
     let witness_columns = (0..gadget_config.num_cols)
       .map(|_| meta.advice_column())
       .collect::<Vec<_>>();
-    let c = meta.challenge_usable_after(FirstPhase);
+    gadget_config.challenges = vec![
+      meta.challenge_usable_after(FirstPhase),
+      meta.challenge_usable_after(FirstPhase)
+    ];
+
     let columns = (0..gadget_config.num_cols)
       .map(|_| meta.advice_column_in(SecondPhase))
       .collect::<Vec<_>>();
-    let rand_vector = meta.advice_column_in(SecondPhase);
+    // let rand_vector = meta.advice_column_in(SecondPhase);
+
+    // for i in 0..gadget_config.num_rand_cols {
+    //   meta.enable_equality(witness_columns[i]);
+    //   meta.enable_equality(columns[i]);
+    // }
 
     for i in 0..gadget_config.num_cols {
       meta.enable_equality(witness_columns[i]);
       meta.enable_equality(columns[i]);
     }
     
-    meta.enable_equality(rand_vector);
+    // meta.enable_equality(rand_vector);
 
     gadget_config.witness_columns = witness_columns;
     gadget_config.columns = columns;
@@ -641,6 +619,8 @@ impl<F: PrimeField + Ord + FromUniformBytes<64>> Circuit<F> for ModelCircuit<F> 
         GadgetType::Max => MaxChip::<F>::configure(meta, gadget_config),
         GadgetType::MulPairs => MulPairsChip::<F>::configure(meta, gadget_config),
         GadgetType::Pow => PowGadgetChip::<F>::configure(meta, gadget_config),
+        GadgetType::RandDotProductOne => RandDotProductOneChip::<F>::configure(meta, gadget_config),
+        GadgetType::RandDotProductTwo => RandDotProductTwoChip::<F>::configure(meta, gadget_config),
         GadgetType::Relu => ReluChip::<F>::configure(meta, gadget_config),
         GadgetType::Rsqrt => RsqrtGadgetChip::<F>::configure(meta, gadget_config),
         GadgetType::Sqrt => SqrtGadgetChip::<F>::configure(meta, gadget_config),
@@ -681,8 +661,7 @@ impl<F: PrimeField + Ord + FromUniformBytes<64>> Circuit<F> for ModelCircuit<F> 
       gadget_config: gadget_config.into(),
       public_col,
       hasher,
-      challenge: c,
-      rand_vector,
+      // rand_vector,
       _marker: PhantomData,
     }
   }
@@ -715,6 +694,14 @@ impl<F: PrimeField + Ord + FromUniformBytes<64>> Circuit<F> for ModelCircuit<F> 
         GadgetType::Pow => {
           let chip = PowGadgetChip::<F>::construct(gadget_rc.clone());
           chip.load_lookups(layouter.namespace(|| "pow lookup"))?;
+        }
+        GadgetType::RandDotProductOne => {
+          let chip = RandDotProductOneChip::<F>::construct(gadget_rc.clone());
+          chip.load_lookups(layouter.namespace(|| "dot product lookup"))?;
+        }
+        GadgetType::RandDotProductTwo => {
+          let chip = RandDotProductTwoChip::<F>::construct(gadget_rc.clone());
+          chip.load_lookups(layouter.namespace(|| "dot product lookup"))?;
         }
         GadgetType::Relu => {
           let chip = ReluChip::<F>::construct(gadget_rc.clone());
@@ -825,12 +812,7 @@ impl<F: PrimeField + Ord + FromUniformBytes<64>> Circuit<F> for ModelCircuit<F> 
         .unwrap()
     };
 
-    // Create Randomness Vector
-    let rand_vector = self.fill_random_vectors(
-      layouter.namespace(|| "randomness"), 
-      config.challenge, 
-      config.rand_vector
-    )?;
+
 
     // Copy the public inputs to be included into commitment
     self.copy_tensors(
@@ -845,7 +827,7 @@ impl<F: PrimeField + Ord + FromUniformBytes<64>> Circuit<F> for ModelCircuit<F> 
       layouter.namespace(|| "dag"),
       &tensors,
       &constants,
-      &rand_vector,
+      // &rand_vector,
       config.gadget_config.clone(),
       &LayerConfig::default(),
     )?;
